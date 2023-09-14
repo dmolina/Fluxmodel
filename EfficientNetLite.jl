@@ -107,18 +107,14 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
       stride = trunc(Int, stride)
 
       stage = []
-      #append!(stage, [MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false)])
       model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false))
       if num_repeat > 1
         inputs = outputs
         stride = 1
       end
       for i in 1:(num_repeat-1)
-        #append!(stage, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio, se_ratio; se=false))
         model = Chain(model, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio, se_ratio; se=false))
       end
-
-      #append!(blocks, stage)
     end
 
     #Head
