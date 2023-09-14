@@ -20,7 +20,11 @@ MBConvBlock(inplanes::Integer, squeeze_planes::Integer, expand1x1_planes::Intege
          expand3x3_planes::Integer)
 
 Create a MBConvBlock module
-([reference](https://arxiv.org/abs/1801.04381v4))
+([reference](https://arxiv.org/abs/1801.04381v4)).
+
+# Arguments
+
+  - `io_channels`: tuple of in channels and out channels
 """
 
 function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <:Integer}, s::Integer, exp_ratio::Number, se_ratio; se = false, drop_connect_rate=nothing) where N
@@ -53,9 +57,10 @@ function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <
             Conv((1,1), exp => io_channels[2], relu; bias=false),
             BatchNorm(io_channels[2]; eps=epsilon, momentum=moment))
 """
-WIP dropc connect
+Dropout de conexeciones queda por arreglar
   if id_skip && s == 1 && io_channels[1] == io_channels[2]
     if drop_connect_rate != nothing
+
     end
   end
 """
@@ -102,14 +107,18 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
       stride = trunc(Int, stride)
 
       stage = []
+      #append!(stage, [MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false)])
       model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false))
       if num_repeat > 1
         inputs = outputs
         stride = 1
       end
       for i in 1:(num_repeat-1)
+        #append!(stage, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio, se_ratio; se=false))
         model = Chain(model, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio, se_ratio; se=false))
       end
+
+      #append!(blocks, stage)
     end
 
     #Head
@@ -129,9 +138,12 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
         model = Chain(model, dropout)
     end
 
+    model = Parallel(x -> reshape(x, (size(x,3),size(x,4))), model)
+
     fc = Dense(out_channels => num_classes)
 
-    #model = Chain(model, fc)
+
+    model = Chain(model, fc)
 
     return model
 end
