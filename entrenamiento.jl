@@ -15,7 +15,6 @@ function loader(data::MNIST=train_data; batchsize::Int=64)
     yhot = Flux.onehotbatch(data.targets, 0:9) 
     Flux.DataLoader((x4dim, yhot); batchsize, shuffle=true) |> gpu
 end
-x1, y1 = first(loader())
 
 function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <:Integer}, s::Integer, exp_ratio::Number) where N
 
@@ -86,12 +85,6 @@ include("ShuffleNet.jl")
 
 model = get_shufflenet(2, 1; in_channels=1, in_size=(28,28), num_classes=10) |> gpu
 """
-
-y1hat = model(x1)
-
-sum(softmax(y1hat); dims=1)
-
-@show hcat(Flux.onecold(y1hat, 0:9), Flux.onecold(y1, 0:9))
 
 using Statistics: mean  
 
