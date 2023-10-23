@@ -1,6 +1,17 @@
 using Flux
 
-function Channelshuffle(x,g)
+"""
+Channelshuffle(channels, groups)
+
+Channel shuffle operation from 'ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices
+([reference](https://arxiv.org/abs/1707.01083)).
+
+# Arguments
+
+  - `channels`: number of channels
+  - `groups`: number of groups
+"""
+function ChannelShuffle(x::Array{Float32, 4}, g::Int)
     width, height, channels, batch = size(x)
     channels_per_group = channels÷g
     if (channels % g) == 0
@@ -11,16 +22,6 @@ function Channelshuffle(x,g)
     return x
 end
 
-struct ChannelShuffle
-    chain::Chain
-    g::Integer
-end
-  
-function (m::ChannelShuffle)(x)
-    return Channelshuffle(m.chain(x),m.g)
-end
-  
-Flux.@functor ChannelShuffle
 
 function ShuffleUnit(in_channels::Integer, out_channels::Integer, grps::Integer, downsample::Bool, ignore_group::Bool)
     mid_channels = out_channels ÷ 4
@@ -31,18 +32,18 @@ function ShuffleUnit(in_channels::Integer, out_channels::Integer, grps::Integer,
         out_channels -= in_channels
     end
 
-    chain = Chain(Conv((1,1), in_channels => mid_channels, relu; groups=grps,pad=SamePad()),
-              BatchNorm(mid_channels))
-    m = ChannelShuffle(chain, grps)
-    m = Chain(m,
-              DepthwiseConv((3,3),  mid_channels => mid_channels, relu; bias=false, stride=strd, pad=SamePad()),
+    m = Chain(Conv((1,1), in_channels => mid_channels; groups=grps,pad=SamePad()),
               BatchNorm(mid_channels),
-              Conv((1,1), mid_channels => out_channels, relu; groups=grps, pad=SamePad()),
-              BatchNorm(out_channels)
-    )
+              NNlib.relu,
+              x -> ChannelShuffle(x, grps),
+              DepthwiseConv((3,3),  mid_channels => mid_channels; bias=false, stride=strd, pad=SamePad()),
+              BatchNorm(mid_channels),
+              NNlib.relu,
+              Conv((1,1), mid_channels => out_channels; groups=grps, pad=SamePad()),
+              BatchNorm(out_channels),
+              NNlib.relu)
     
     if downsample
-        #sm = SkipConnection(m, (mx, x) -> cat(mx, x, dims=3));
         m = Parallel((mx, x) -> cat(mx, x, dims=3),m, MeanPool((3,3); pad=SamePad(), stride=2))
     else
         m = SkipConnection(m, +)
@@ -63,27 +64,20 @@ function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=
     init = ShuffleInitBlock(in_channels, init_block_channels)
     model = Chain(init)
     in_channels::Integer = init_block_channels
-    features = []
     for (i, num_channels) in enumerate(channels)
-        stage = []
         for (j, out_channels) in enumerate(num_channels)
             downsample = j==1
             ignore_group = i==1 && j==1
             out_ch::Integer = trunc(out_channels)
-            #append!(stage, [ShuffleUnit(in_channels, out_ch, groups, downsample, ignore_group)])
             model = Chain(model, ShuffleUnit(in_channels, out_ch, groups, downsample, ignore_group))
             in_channels = out_ch
         end
-        #append!(features, stage)
     end
-
-
 
     model = Chain(model, GlobalMeanPool())
     model = Parallel(x -> reshape(x, (size(x, 3),size(x, 4))), model)
     output = Dense(in_channels => num_classes)
     model = Chain(model, output)
-    #return Chain(init, features, final, output)
     return model
 end
 
