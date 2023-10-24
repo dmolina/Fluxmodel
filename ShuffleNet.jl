@@ -74,11 +74,7 @@ function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=
         end
     end
 
-    model = Chain(model, GlobalMeanPool())
-    model = Parallel(x -> reshape(x, (size(x, 3),size(x, 4))), model)
-    output = Dense(in_channels => num_classes)
-    model = Chain(model, output)
-    return model
+    return Chain(model, GlobalMeanPool(), Flux.flatten, Dense(in_channels => num_classes))
 end
 
 function get_shufflenet(groups, width_scale; in_channels=3, in_size=(224,224), num_classes=1000)
