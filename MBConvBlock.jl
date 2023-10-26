@@ -8,11 +8,12 @@ function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <
     exp = trunc(Int, exp)
     id_skip = true
   
-    m = Chain(Conv((1,1), io_channels[1] => exp, relu; bias=false), #Expansion
+    m = Chain(Conv((1,1), io_channels[1] => exp; bias=false), #Expansion
               BatchNorm(exp; eps=epsilon, momentum=moment),
-              DepthwiseConv(k, exp => exp, relu; stride=s, bias=false, pad=SamePad()), #Depthwise
-              BatchNorm(exp; eps=epsilon, momentum=moment)
-              )
+              NNlib.relu,
+              DepthwiseConv(k, exp => exp; stride=s, bias=false, pad=SamePad()), #Depthwise
+              BatchNorm(exp; eps=epsilon, momentum=moment),
+              NNlib.relu)
   
     #squeeze
     if se
@@ -21,23 +22,16 @@ function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <
       Chain(m,
             AdaptiveMeanPool((1,1),),
             Conv((1,1), exp => squeezed, relu),
-            Conv((1,1), squeezed => exp, sigmoid)
-            )
+            Conv((1,1), squeezed => exp, sigmoid))
       
     end
     #output phase
     m = Chain(m,
-              Conv((1,1), exp => io_channels[2], relu; bias=false),
-              BatchNorm(io_channels[2]; eps=epsilon, momentum=moment))
-  """
-  Dropout de conexeciones queda por arreglar
-    if id_skip && s == 1 && io_channels[1] == io_channels[2]
-      if drop_connect_rate != nothing
-  
-      end
-    end
-  """
-    if io_channels[1] == io_channels[2]
+              Conv((1,1), exp => io_channels[2]; bias=false),
+              BatchNorm(io_channels[2]; eps=epsilon, momentum=moment),
+              NNlib.relu)
+    
+    if io_channels[1] == io_channels[2] && s = 1
       return SkipConnection(m, +)
     end
   
