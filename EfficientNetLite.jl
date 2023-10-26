@@ -16,7 +16,7 @@ function round_repeats(repeats, multiplier)
 end
 
 
-function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_rate; drop_connect_rate=nothing)
+function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_rate)
   moment = 0.01
   epsilon = 1e-3
   mb_block_settings =
