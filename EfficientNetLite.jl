@@ -1,5 +1,5 @@
 using Flux
-
+include("MBConvBlock.jl")
 
 function round_filters(filters::Number, multiplier::Number; divisor=8, min_width=nothing)
   """Calculate and round number of filters based on width multiplier."""
@@ -13,62 +13,6 @@ end
 function round_repeats(repeats, multiplier)
   """Round number of filters based on depth multiplier."""
   return ceil(multiplier*repeats)
-end
-
-"""
-MBConvBlock(inplanes::Integer, squeeze_planes::Integer, expand1x1_planes::Integer,
-         expand3x3_planes::Integer)
-
-Create a MBConvBlock module
-([reference](https://arxiv.org/abs/1801.04381v4)).
-
-# Arguments
-
-  - `io_channels`: tuple of in channels and out channels
-"""
-
-function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <:Integer}, s::Integer, exp_ratio::Number, se_ratio; se = false, drop_connect_rate=nothing) where N
-
-  moment = 0.01
-  epsilon = 1e-3
-  exp = io_channels[1]*exp_ratio
-  exp = trunc(Int, exp)
-  id_skip = true
-
-  m = Chain(Conv((1,1), io_channels[1] => exp, relu; bias=false), #Expansion
-            BatchNorm(exp; eps=epsilon, momentum=moment),
-            DepthwiseConv(k, exp => exp, relu; stride=s, bias=false, pad=SamePad()), #Depthwise
-            BatchNorm(exp; eps=epsilon, momentum=moment)
-            )
-
-  #squeeze
-  if se
-    squeezed = (io_channels[1]*se_ratio) > 1 ? (io_channels[1]*se_ratio) : 1
-    squeezed = trunc(Int, squeezed)
-    Chain(m,
-          AdaptiveMeanPool((1,1),),
-          Conv((1,1), exp => squeezed, relu),
-          Conv((1,1), squeezed => exp, sigmoid)
-          )
-    
-  end
-  #output phase
-  m = Chain(m,
-            Conv((1,1), exp => io_channels[2], relu; bias=false),
-            BatchNorm(io_channels[2]; eps=epsilon, momentum=moment))
-"""
-Dropout de conexeciones queda por arreglar
-  if id_skip && s == 1 && io_channels[1] == io_channels[2]
-    if drop_connect_rate != nothing
-
-    end
-  end
-"""
-  if io_channels[1] == io_channels[2]
-    return SkipConnection(m, +)
-  end
-
-  return m
 end
 
 
