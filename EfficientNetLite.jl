@@ -38,7 +38,6 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
     model = Chain(stem)
 
     #Blocks
-    blocks = []
     for config in eachrow(mb_block_settings)
       num_repeat, kernal, stride, expand_ratio, inputs, outputs, se_ratio = config
       inputs = inputs == 32 ? inputs : round_filters(inputs, widthi_multiplier)
@@ -49,8 +48,7 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
       outputs = trunc(Int, outputs)
       kernal = trunc(Int, kernal)
       stride = trunc(Int, stride)
-
-      stage = []
+    
       model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false))
       if num_repeat > 1
         inputs = outputs
