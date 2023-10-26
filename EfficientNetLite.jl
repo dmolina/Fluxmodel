@@ -16,7 +16,7 @@ function round_repeats(repeats, multiplier)
 end
 
 
-function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_rate)
+function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, num_classes, dropout_rate)
   moment = 0.01
   epsilon = 1e-3
   mb_block_settings =
@@ -32,7 +32,7 @@ function EfficientNet(widthi_multiplier, depth_multiplier, num_classes, dropout_
     #Stem
     out_channels = 32
     stem = Chain(
-      Conv((3,3), 3 => out_channels, relu; stride=2, pad=1, bias=false),
+      Conv((3,3), input_channels => out_channels, relu; stride=2, pad=1, bias=false),
       BatchNorm(out_channels; eps=epsilon, momentum=moment)
     )
     model = Chain(stem)
