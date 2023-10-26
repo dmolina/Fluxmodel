@@ -31,7 +31,7 @@ function MBConvBlock(k::Tuple{Vararg{Integer, N}},io_channels::Pair{<:Integer, <
               BatchNorm(io_channels[2]; eps=epsilon, momentum=moment),
               NNlib.relu)
     
-    if io_channels[1] == io_channels[2] && s = 1
+    if io_channels[1] == io_channels[2] && s == 1
       return SkipConnection(m, +)
     end
   
