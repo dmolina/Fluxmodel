@@ -49,13 +49,13 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
       kernal = trunc(Int, kernal)
       stride = trunc(Int, stride)
     
-      model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio, se_ratio; se=false))
+      model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio))
       if num_repeat > 1
         inputs = outputs
         stride = 1
       end
       for i in 1:(num_repeat-1)
-        model = Chain(model, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio, se_ratio; se=false))
+        model = Chain(model, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio))
       end
     end
 
