@@ -29,13 +29,12 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
       4 5 2 6 112 192 0.25;
       1 3 1 6 192 320 0.25]
 
+    blocks = []
     #Stem
     out_channels = 32
-    stem = Chain(
-      Conv((3,3), input_channels => out_channels; stride=2, pad=1, bias=false),
-      BatchNorm(out_channels; eps=epsilon, momentum=moment),
-      NNlib.relu)
-    model = Chain(stem)
+    append!(blocks,[Conv((3,3), input_channels => out_channels; stride=2, pad=1, bias=false),
+    BatchNorm(out_channels; eps=epsilon, momentum=moment),
+    NNlib.relu])
 
     #Blocks
     for config in eachrow(mb_block_settings)
@@ -49,16 +48,19 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
       kernal = trunc(Int, kernal)
       stride = trunc(Int, stride)
     
-      model = Chain(model, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio))
+      stage = []
+      push!(stage, MBConvBlock((kernal,kernal), inputs => outputs, stride, expand_ratio))
       if num_repeat > 1
         inputs = outputs
         stride = 1
       end
       for i in 1:(num_repeat-1)
-        model = Chain(model, MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio))
+        append!(stage, [MBConvBlock((kernal,kernal),inputs => outputs, stride, expand_ratio)])
       end
+      append!(blocks, stage)
     end
 
+    model = Chain(blocks...)
     #Head
     in_channels = round_filters(mb_block_settings[7,6], widthi_multiplier)
     out_channels::Integer = 1280
