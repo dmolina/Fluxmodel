@@ -32,9 +32,9 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
     #Stem
     out_channels = 32
     stem = Chain(
-      Conv((3,3), input_channels => out_channels, relu; stride=2, pad=1, bias=false),
-      BatchNorm(out_channels; eps=epsilon, momentum=moment)
-    )
+      Conv((3,3), input_channels => out_channels; stride=2, pad=1, bias=false),
+      BatchNorm(out_channels; eps=epsilon, momentum=moment),
+      NNlib.relu)
     model = Chain(stem)
 
     #Blocks
@@ -63,9 +63,9 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
     in_channels = round_filters(mb_block_settings[7,6], widthi_multiplier)
     out_channels::Integer = 1280
     head = Chain(
-      Conv((1,1), in_channels => out_channels, relu; stride=1, pad=0, bias=false),
-      BatchNorm(out_channels; eps=epsilon, momentum=moment)
-    )
+      Conv((1,1), in_channels => out_channels; stride=1, pad=0, bias=false),
+      BatchNorm(out_channels; eps=epsilon, momentum=moment),
+      NNlib.relu)
 
     avgpool = AdaptiveMeanPool((1, 1))
 
