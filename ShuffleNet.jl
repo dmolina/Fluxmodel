@@ -60,7 +60,7 @@ function ShuffleInitBlock(in_channels::Integer, out_channels::Integer)
 end
 
 
-function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=3, in_size=(224,224), num_classes=1000)
+function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=3, num_classes=1000)
     init = ShuffleInitBlock(in_channels, init_block_channels)
     model = Chain(init)
     in_channels::Integer = init_block_channels
@@ -77,7 +77,7 @@ function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=
     return Chain(model, GlobalMeanPool(), Flux.flatten, Dense(in_channels => num_classes))
 end
 
-function get_shufflenet(groups, width_scale; in_channels=3, in_size=(224,224), num_classes=1000)
+function get_shufflenet(groups, width_scale; in_channels=3, num_classes=1000)
     init_block_channels = 24
     layers = [4, 8, 4]
 
@@ -113,7 +113,6 @@ function get_shufflenet(groups, width_scale; in_channels=3, in_size=(224,224), n
         init_block_channels,
         groups; 
         in_channels=in_channels, 
-        in_size=in_size,
         num_classes=num_classes)
 
     return net
