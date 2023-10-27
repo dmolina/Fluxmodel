@@ -61,19 +61,29 @@ end
 
 
 function ShuffleNet(channels, init_block_channels::Integer, groups; in_channels=3, num_classes=1000)
-    init = ShuffleInitBlock(in_channels, init_block_channels)
-    model = Chain(init)
+    features = []
+
+    append!(features, [Conv((3,3), in_channels => init_block_channels; stride=2, pad=SamePad()),
+    BatchNorm(init_block_channels),
+    NNlib.relu,
+    MaxPool((3,3); stride=2, pad=SamePad())])
+
     in_channels::Integer = init_block_channels
+  
     for (i, num_channels) in enumerate(channels)
+        stage = []
         for (j, out_channels) in enumerate(num_channels)
             downsample = j==1
             ignore_group = i==1 && j==1
             out_ch::Integer = trunc(out_channels)
-            model = Chain(model, ShuffleUnit(in_channels, out_ch, groups, downsample, ignore_group))
+            push!(stage, ShuffleUnit(in_channels, out_ch, groups, downsample, ignore_group))
             in_channels = out_ch
         end
+        append!(features, stage)
     end
-
+  
+    model = Chain(features...)
+  
     return Chain(model, GlobalMeanPool(), Flux.flatten, Dense(in_channels => num_classes))
 end
 
