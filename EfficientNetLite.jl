@@ -76,12 +76,7 @@ function EfficientNet(input_channels::Int, widthi_multiplier, depth_multiplier, 
         model = Chain(model, dropout)
     end
 
-    model = Parallel(x -> reshape(x, (size(x,3),size(x,4))), model)
-
-    fc = Dense(out_channels => num_classes)
-
-
-    model = Chain(model, fc)
+    model = Chain(model, Flux.flatten, Dense(out_channels => num_classes))
 
     return model
 end
