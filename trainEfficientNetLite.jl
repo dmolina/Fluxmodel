@@ -8,7 +8,7 @@ task = ImageClassificationSingle(blocks, size=(128, 128))
 
 backbone = EfficientNet(3, 1.4, 1.8, 10, 0.3)
 
-learner = tasklearner(task, data; callbacks=[ToGPU(), Metrics(accuracy)], optimizer=Optimisers.Adam())
+learner = tasklearner(task, data; callbacks=[ToGPU(), Metrics(accuracy)], optimizer=Optimisers.Adam(), backbone)
 
 fitonecycle!(learner, 15, 0.004)
 
