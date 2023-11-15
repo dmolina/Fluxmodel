@@ -1,7 +1,6 @@
 # Fluxmodel
-A simple implemetations of modern Deep Learning models using FluxML.
+A simple implemetations of modern Deep Learning models using FluxML done for a student, Rafael Timbota: [https://github.com/RafaelT00/Fluxmodel](https://github.com/RafaelT00/Fluxmodel)
 
-Fully based on official versions for TensorFlow and PyTorch and other Python libraries.
-For now the networks I've been working on are:
--ShuffleNet(WIP) <br>
--EfficientNet Lite(WIP)
+These are the implemented models:
+- ShuffleNet.
+- EfficientNet Lite.
